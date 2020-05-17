@@ -55,22 +55,6 @@ export class AcronymService {
 
   private fetchJSONData() {
     return new Promise<Acronym[]>((resolve, reject) => {
-      // const data = fs.readFileSync(
-      //   path.join(__dirname, '../../../') + 'seedData.json',
-      //   'utf8',
-      // );
-      // console.log('data is ', data);
-      // let acronyms: {
-      //   [acronym: string]: string;
-      // }[] = JSON.parse(data);
-      // const finalData = acronyms.map(acronym => {
-      //   const newAcronym = new Acronym();
-      //   newAcronym.acronym = Object.keys(acronym)[0];
-      //   newAcronym.definition = Object.values(acronym)[0];
-      //   return newAcronym;
-      // });
-      // resolve(finalData);
-
       fs.readFile(
         path.join(__dirname, '../../../') + 'seedData.json',
         'utf8',
