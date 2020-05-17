@@ -20,7 +20,7 @@ export class AcronymController {
   }
 
   @Get(':acronym')
-  getAcronym(@Param('acronym') acronym: string) {
-    return this.acronymService.getAcronymDefinition(acronym);
+  async getAcronym(@Param('acronym') acronym: string) {
+    return await this.acronymService.getAcronymDefinition(acronym);
   }
 }

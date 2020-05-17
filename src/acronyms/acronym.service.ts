@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -26,12 +22,11 @@ export class AcronymService {
     }
   }
 
-  getAcronymDefinition(acronym: string) {
-    if (acronym == 'null') {
-      throw new NotFoundException('Could not find acronym definition');
-    }
-
-    return { acronym: acronym };
+  async getAcronymDefinition(acronym: string) {
+    const result = await this.acronymRepository.find({
+      where: { acronym: acronym },
+    });
+    return result;
   }
 
   async bootStrapDBWithInitialData() {
