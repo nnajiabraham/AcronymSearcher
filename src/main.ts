@@ -1,8 +1,20 @@
 import { NestFactory } from '@nestjs/core';
+import { AcronymService } from './acronyms/acronym.service';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
+
+  const acronymService = app.get(AcronymService);
+  try {
+    await acronymService.bootStrapDBWithInitialData();
+  } catch (e) {
+    console.error(
+      'An error occured bootstrapping db with sample json file, skipping process, \n',
+      e,
+    );
+  } finally {
+    await app.listen(3000);
+  }
 }
 bootstrap();
