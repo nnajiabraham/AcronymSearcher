@@ -11,7 +11,7 @@ import { Definition } from './definition.entity';
 @Entity()
 export class Acronym {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  acronymId: string;
 
   @Column()
   @Index()

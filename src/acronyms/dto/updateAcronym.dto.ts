@@ -1,4 +1,4 @@
 export class UpdateAcronymDto {
-  readonly acronym?: string;
-  readonly definition?: string;
+  readonly definitionId: string;
+  readonly definition: string;
 }

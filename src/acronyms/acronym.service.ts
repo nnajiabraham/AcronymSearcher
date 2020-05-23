@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Like, Repository } from 'typeorm';
 import { CreateAcronymDto } from './dto/createAcronym.dto';
+import { UpdateAcronymDto } from './dto/updateAcronym.dto';
 import { Acronym, AcronymDBState } from './entity/acronym.entity';
 import { Definition } from './entity/definition.entity';
 
@@ -21,7 +22,6 @@ export class AcronymService {
     private acronymDBStateRepository: Repository<AcronymDBState>,
   ) {}
 
-  //TODO The relationship for one acronym is to many definitions, need to handle that in the db
   async createAcronym(acronym: CreateAcronymDto): Promise<Definition> {
     const prevSaved = await this.acronymRepository.find({
       where: { acronym: Like(acronym.acronym) },
@@ -72,36 +72,48 @@ export class AcronymService {
   async getRandomRecords(count: number) {
     const result: Acronym[] = await this.acronymRepository
       .createQueryBuilder()
-      .select('*')
-      .from<Acronym>(Acronym, 'a')
-      .orderBy('Random()')
+      .select(['acronymId', 'acronym', 'definitionId', 'definition'])
+      .innerJoin(Definition, 'd')
       .limit(count)
+      .orderBy('Random()')
       .execute();
 
     return result;
   }
 
-  async updateAcronym(acronym: string, update: Acronym) {
-    //TODO after changing db structure to one to many have to handle updating
-    const entity = await this.acronymRepository.findOne({
+  async updateAcronym(acronym: string, update: UpdateAcronymDto) {
+    const acronymRecord = await this.acronymRepository.findOne({
       where: { acronym: Like(acronym) },
       relations: ['definitions'],
     });
 
-    if (!entity) {
+    if (!acronymRecord) {
       console.error('Error updating acronym, Acronym not found ');
       throw new NotFoundException('Acronym not found');
     }
 
+    const acronymDefinition = await this.definitionRepository.findOne({
+      where: { definitionId: update.definitionId },
+    });
+
+    if (!acronymDefinition) {
+      console.error(
+        'Error updating acronym definition, Acronym definition not found ',
+      );
+      throw new NotFoundException('Acronym Definition not found');
+    }
+
     try {
-      update.id = entity.id;
-      const result = await this.acronymRepository.save(update);
+      acronymDefinition.definition = update.definition;
+      const result = await this.definitionRepository.save(acronymDefinition);
       return result;
     } catch (err) {
       console.error('Error occurred updating record', err);
       throw new InternalServerErrorException('Error occurred updating record');
     }
   }
+
+  async deleteAcronym() {}
 
   async bootStrapDBWithInitialData() {
     const status = await this.acronymDBStateRepository.findOne({
@@ -112,22 +124,16 @@ export class AcronymService {
       return;
     }
 
-    const newAcronyms = new Map<string, Acronym>();
-
     const acronymsEntity = await this.fetchJSONData();
 
     acronymsEntity.forEach(async (definitions, acronym) => {
       const newAcronym = new Acronym();
       newAcronym.acronym = acronym;
-
       await this.acronymRepository.save(newAcronym);
-
-      newAcronyms.set(acronym, newAcronym);
 
       definitions.forEach(definition => {
         definition.acronym = newAcronym;
       });
-
       await this.definitionRepository.save(definitions);
     });
 
@@ -138,8 +144,6 @@ export class AcronymService {
     await this.acronymDBStateRepository.save(acronymStatus);
   }
 
-  //TODO The relationship for one acronym is to many definitions, need to handle that in the db
-  //when prepopulating data have to handle that by checking for duplicates
   private fetchJSONData() {
     return new Promise<Map<string, Definition[]>>((resolve, reject) => {
       try {
@@ -154,20 +158,14 @@ export class AcronymService {
 
         const acronymsMap = new Map<string, Definition[]>();
 
-        // After reading and parsing the initial JSON record,
+        // After parsing the initial JSON record,
         // some acronyms have multiple definitions
         // group them in a map
-
         acronyms.forEach(acronym => {
-          // const acronymObjKey = new Acronym();
-          // acronymObjKey.acronym = Object.keys(acronym)[0];
-
           const acronymKey = Object.keys(acronym)[0];
 
           const definitionObj = new Definition();
           definitionObj.definition = Object.values(acronym)[0];
-
-          // const newDefinition = Object.values(acronym)[0];
 
           if (acronymsMap.has(acronymKey)) {
             acronymsMap.get(acronymKey).push(definitionObj);

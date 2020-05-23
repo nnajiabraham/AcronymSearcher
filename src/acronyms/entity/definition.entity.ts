@@ -4,14 +4,14 @@ import { Acronym } from './acronym.entity';
 @Entity()
 export class Definition {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  definitionId: string;
 
   @Column()
   definition: string;
 
   @ManyToOne(
     () => Acronym,
-    acronym => acronym.id,
+    acronym => acronym.acronymId,
   )
   acronym: Acronym;
 }

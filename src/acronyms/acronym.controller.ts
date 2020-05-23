@@ -75,19 +75,12 @@ export class AcronymController {
     @Param('acronym') acronym: string,
     @Body() payload: UpdateAcronymDto,
   ) {
-    if (!payload || !payload.definition) {
-      throw new BadRequestException('Missing appropriate payload');
+    if (!payload || !payload.definitionId || !payload.definition) {
+      throw new BadRequestException('Missing definitionId or definition');
     }
 
-    const update = new Acronym();
-    const newDefinition = new Definition();
-    newDefinition.definition = payload.definition;
-
-    update.acronym = acronym;
-    update.definitions = [newDefinition];
-
-    const resp = await this.acronymService.updateAcronym(acronym, update);
-    return new HTTPResponseDto<Acronym>(200, resp, null);
+    const resp = await this.acronymService.updateAcronym(acronym, payload);
+    return new HTTPResponseDto<Definition>(200, resp, null);
   }
 
   @Delete(':acronym')
@@ -96,7 +89,7 @@ export class AcronymController {
     @Body() payload: UpdateAcronymDto,
   ) {
     if (!payload || !payload.definition) {
-      throw new BadRequestException('Missing appropriate payload');
+      throw new BadRequestException('Missing definitionId or definition');
     }
 
     const update = new Acronym();
@@ -106,7 +99,7 @@ export class AcronymController {
     update.acronym = acronym;
     update.definitions = [newDefinition];
 
-    const resp = await this.acronymService.updateAcronym(acronym, update);
-    return new HTTPResponseDto<Acronym>(200, resp, null);
+    // const resp = await this.acronymService.updateAcronym(acronym, update);
+    // return new HTTPResponseDto<Acronym>(200, "resp", null);
   }
 }
