@@ -1,8 +1,13 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Like, Repository } from 'typeorm';
+import { CreateAcronymDto } from './dto/createAcronym.dto';
 import { Acronym, AcronymDBState } from './entity/acronym.entity';
 import { Definition } from './entity/definition.entity';
 
@@ -10,14 +15,40 @@ import { Definition } from './entity/definition.entity';
 export class AcronymService {
   constructor(
     @InjectRepository(Acronym) private acronymRepository: Repository<Acronym>,
+    @InjectRepository(Definition)
+    private definitionRepository: Repository<Definition>,
     @InjectRepository(AcronymDBState)
     private acronymDBStateRepository: Repository<AcronymDBState>,
   ) {}
 
   //TODO The relationship for one acronym is to many definitions, need to handle that in the db
-  async createAcronym(acronym: Acronym): Promise<Acronym> {
-    const newAcronym = await this.acronymRepository.save(acronym);
-    return newAcronym;
+  async createAcronym(acronym: CreateAcronymDto): Promise<Definition> {
+    const prevSaved = await this.acronymRepository.find({
+      where: { acronym: Like(acronym.acronym) },
+    });
+
+    if (prevSaved.length == 0) {
+      const newAcronym = new Acronym();
+      newAcronym.acronym = acronym.acronym;
+      await this.acronymRepository.save(newAcronym);
+
+      const newDefinition = new Definition();
+      newDefinition.definition = acronym.definition;
+      newDefinition.acronym = newAcronym;
+
+      const savedDefinition = await this.definitionRepository.save(
+        newDefinition,
+      );
+
+      return savedDefinition;
+    }
+
+    const newDefinition = new Definition();
+    newDefinition.definition = acronym.definition;
+    newDefinition.acronym = prevSaved[0];
+
+    const savedDefinition = await this.definitionRepository.save(newDefinition);
+    return savedDefinition;
   }
 
   async getAcronymDefinition(acronym: string) {
@@ -81,8 +112,24 @@ export class AcronymService {
       return;
     }
 
+    const newAcronyms = new Map<string, Acronym>();
+
     const acronymsEntity = await this.fetchJSONData();
-    await this.acronymRepository.save(acronymsEntity);
+
+    acronymsEntity.forEach(async (definitions, acronym) => {
+      const newAcronym = new Acronym();
+      newAcronym.acronym = acronym;
+
+      await this.acronymRepository.save(newAcronym);
+
+      newAcronyms.set(acronym, newAcronym);
+
+      definitions.forEach(definition => {
+        definition.acronym = newAcronym;
+      });
+
+      await this.definitionRepository.save(definitions);
+    });
 
     const acronymStatus = new AcronymDBState();
     acronymStatus.id = '1';
@@ -94,7 +141,7 @@ export class AcronymService {
   //TODO The relationship for one acronym is to many definitions, need to handle that in the db
   //when prepopulating data have to handle that by checking for duplicates
   private fetchJSONData() {
-    return new Promise<Acronym[]>((resolve, reject) => {
+    return new Promise<Map<string, Definition[]>>((resolve, reject) => {
       try {
         const data = fs.readFileSync(
           path.join(__dirname, '../../') + 'seedData.json',
@@ -105,45 +152,32 @@ export class AcronymService {
           [acronym: string]: string;
         }[] = JSON.parse(data);
 
-        const acronymsMap = new Map<string, string[]>();
+        const acronymsMap = new Map<string, Definition[]>();
 
-        // After reading and parsing the initial JSON record, 
-        // some acronyms have multiple definitions 
+        // After reading and parsing the initial JSON record,
+        // some acronyms have multiple definitions
         // group them in a map
 
         acronyms.forEach(acronym => {
-          const acronymKey = Object.keys(acronym)[0];
-          const newDefinition = Object.values(acronym)[0];
-          const definitions = acronymsMap.get(acronymKey);
+          // const acronymObjKey = new Acronym();
+          // acronymObjKey.acronym = Object.keys(acronym)[0];
 
-          if (definitions) {
-            definitions.push(newDefinition);
+          const acronymKey = Object.keys(acronym)[0];
+
+          const definitionObj = new Definition();
+          definitionObj.definition = Object.values(acronym)[0];
+
+          // const newDefinition = Object.values(acronym)[0];
+
+          if (acronymsMap.has(acronymKey)) {
+            acronymsMap.get(acronymKey).push(definitionObj);
             return;
           }
 
-          acronymsMap.set(acronymKey, [newDefinition]);
+          acronymsMap.set(acronymKey, [definitionObj]);
         });
 
-        //
-        let finalDatas:Acronym[];
-        acronymsMap.forEach((definitions, acronym)=>{
-          const newAcronym = new Acronym();
-          const newDefinition = new Definition()
-
-          newDefinition.acronym = newAcronym
-          newDefinition.definition = 
-          
-          newAcronym.acronym = acronym;
-          newAcronym.definitions = ;
-        })
-
-        const finalData = acronyms.map(acronym => {
-          const newAcronym = new Acronym();
-          newAcronym.acronym = Object.keys(acronym)[0];
-          newAcronym.definition = Object.values(acronym)[0];
-          return newAcronym;
-        });
-        resolve(finalData);
+        resolve(acronymsMap);
       } catch (err) {
         reject(err);
       }

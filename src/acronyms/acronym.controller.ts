@@ -39,17 +39,9 @@ export class AcronymController {
 
   @Post()
   async addAcronym(@Body() payload: CreateAcronymDto) {
-    const newAcronym = new Acronym();
-    const newDefinition = new Definition();
-
-    newDefinition.acronym = newAcronym;
-    newDefinition.definition = payload.definition;
-    newAcronym.acronym = payload.acronym;
-    newAcronym.definitions = [newDefinition];
-
     try {
-      const resp = await this.acronymService.createAcronym(newAcronym);
-      return new HTTPResponseDto<Acronym>(200, resp, null);
+      const resp = await this.acronymService.createAcronym(payload);
+      return new HTTPResponseDto<Definition>(200, resp, null);
     } catch (e) {
       console.error('Error occurred creating a new Acronym ', e);
       throw new InternalServerErrorException('Unable to save acronym');
@@ -88,8 +80,11 @@ export class AcronymController {
     }
 
     const update = new Acronym();
-    update.acronym = payload.acronym ? payload.acronym : acronym;
-    update.definition = payload.definition;
+    const newDefinition = new Definition();
+    newDefinition.definition = payload.definition;
+
+    update.acronym = acronym;
+    update.definitions = [newDefinition];
 
     const resp = await this.acronymService.updateAcronym(acronym, update);
     return new HTTPResponseDto<Acronym>(200, resp, null);
@@ -105,8 +100,11 @@ export class AcronymController {
     }
 
     const update = new Acronym();
-    update.acronym = payload.acronym ? payload.acronym : acronym;
-    update.definition = payload.definition;
+    const newDefinition = new Definition();
+
+    newDefinition.definition = payload.definition;
+    update.acronym = acronym;
+    update.definitions = [newDefinition];
 
     const resp = await this.acronymService.updateAcronym(acronym, update);
     return new HTTPResponseDto<Acronym>(200, resp, null);
