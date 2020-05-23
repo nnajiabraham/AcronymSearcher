@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   InternalServerErrorException,
   Param,
@@ -9,11 +10,12 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { Acronym } from './acronym.entity';
 import { AcronymService } from './acronym.service';
 import { CreateAcronymDto } from './dto/createAcronym.dto';
 import { HTTPResponseDto } from './dto/response.dto';
 import { UpdateAcronymDto } from './dto/updateAcronym.dto';
+import { Acronym } from './entity/acronym.entity';
+import { Definition } from './entity/definition.entity';
 
 @Controller('acronym')
 export class AcronymController {
@@ -38,8 +40,12 @@ export class AcronymController {
   @Post()
   async addAcronym(@Body() payload: CreateAcronymDto) {
     const newAcronym = new Acronym();
+    const newDefinition = new Definition();
+
+    newDefinition.acronym = newAcronym;
+    newDefinition.definition = payload.definition;
     newAcronym.acronym = payload.acronym;
-    newAcronym.definition = payload.definition;
+    newAcronym.definitions = [newDefinition];
 
     try {
       const resp = await this.acronymService.createAcronym(newAcronym);
@@ -74,6 +80,23 @@ export class AcronymController {
 
   @Put(':acronym')
   async updateAcronym(
+    @Param('acronym') acronym: string,
+    @Body() payload: UpdateAcronymDto,
+  ) {
+    if (!payload || !payload.definition) {
+      throw new BadRequestException('Missing appropriate payload');
+    }
+
+    const update = new Acronym();
+    update.acronym = payload.acronym ? payload.acronym : acronym;
+    update.definition = payload.definition;
+
+    const resp = await this.acronymService.updateAcronym(acronym, update);
+    return new HTTPResponseDto<Acronym>(200, resp, null);
+  }
+
+  @Delete(':acronym')
+  async deleteAcronym(
     @Param('acronym') acronym: string,
     @Body() payload: UpdateAcronymDto,
   ) {

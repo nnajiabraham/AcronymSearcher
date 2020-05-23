@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Connection } from 'typeorm';
-import { Acronym, AcronymStatus } from './acronyms/acronym.entity';
 import { AcronymModule } from './acronyms/acronym.module';
+import { Acronym, AcronymDBState } from './acronyms/entity/acronym.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -14,7 +14,7 @@ import { AppService } from './app.service';
       database: 'wtf.db',
       synchronize: true,
       logging: false,
-      entities: [Acronym, AcronymStatus],
+      entities: [Acronym, AcronymDBState],
     }),
   ],
   controllers: [AppController],

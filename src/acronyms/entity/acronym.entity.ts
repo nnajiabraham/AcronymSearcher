@@ -2,9 +2,11 @@ import {
   Column,
   Entity,
   Index,
+  OneToMany,
   PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Definition } from './definition.entity';
 
 @Entity()
 export class Acronym {
@@ -15,15 +17,21 @@ export class Acronym {
   @Index()
   acronym: string;
 
-  @Column()
-  definition: string;
+  @OneToMany(
+    () => Definition,
+    definition => definition.acronym,
+    {
+      cascade: ['insert', 'update'],
+    },
+  )
+  definitions: Definition[];
 }
 
 @Entity()
-export class AcronymStatus {
+export class AcronymDBState {
   @PrimaryColumn({ unique: true })
   id: string;
 
   @Column()
-  seedDataLoaded: boolean;
+  hasPreLoadedAcronym: boolean;
 }

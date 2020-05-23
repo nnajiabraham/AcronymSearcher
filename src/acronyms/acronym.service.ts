@@ -1,20 +1,17 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Like, Repository } from 'typeorm';
-import { Acronym, AcronymStatus } from './acronym.entity';
+import { Acronym, AcronymDBState } from './entity/acronym.entity';
+import { Definition } from './entity/definition.entity';
 
 @Injectable()
 export class AcronymService {
   constructor(
     @InjectRepository(Acronym) private acronymRepository: Repository<Acronym>,
-    @InjectRepository(AcronymStatus)
-    private acronymStatusRepository: Repository<AcronymStatus>,
+    @InjectRepository(AcronymDBState)
+    private acronymDBStateRepository: Repository<AcronymDBState>,
   ) {}
 
   //TODO The relationship for one acronym is to many definitions, need to handle that in the db
@@ -26,6 +23,7 @@ export class AcronymService {
   async getAcronymDefinition(acronym: string) {
     const result = await this.acronymRepository.find({
       where: { acronym: Like(acronym) },
+      relations: ['definitions'],
     });
     return result;
   }
@@ -33,6 +31,7 @@ export class AcronymService {
   async searchAcronym(acronym: string, offset: number = 0, limit: number = 10) {
     const result = await this.acronymRepository.findAndCount({
       where: { acronym: Like(`%${acronym}%`) },
+      relations: ['definitions'],
       take: limit > 10 ? 10 : limit,
       skip: offset,
     });
@@ -55,6 +54,7 @@ export class AcronymService {
     //TODO after changing db structure to one to many have to handle updating
     const entity = await this.acronymRepository.findOne({
       where: { acronym: Like(acronym) },
+      relations: ['definitions'],
     });
 
     if (!entity) {
@@ -73,22 +73,22 @@ export class AcronymService {
   }
 
   async bootStrapDBWithInitialData() {
-    const status = await this.acronymStatusRepository.findOne({
+    const status = await this.acronymDBStateRepository.findOne({
       where: { id: '1' },
     });
 
-    if (status && status.id == '1' && status.seedDataLoaded) {
+    if (status && status.id == '1' && status.hasPreLoadedAcronym) {
       return;
     }
 
     const acronymsEntity = await this.fetchJSONData();
     await this.acronymRepository.save(acronymsEntity);
 
-    const acronymStatus = new AcronymStatus();
+    const acronymStatus = new AcronymDBState();
     acronymStatus.id = '1';
-    acronymStatus.seedDataLoaded = true;
+    acronymStatus.hasPreLoadedAcronym = true;
 
-    await this.acronymStatusRepository.save(acronymStatus);
+    await this.acronymDBStateRepository.save(acronymStatus);
   }
 
   //TODO The relationship for one acronym is to many definitions, need to handle that in the db
@@ -104,6 +104,38 @@ export class AcronymService {
         let acronyms: {
           [acronym: string]: string;
         }[] = JSON.parse(data);
+
+        const acronymsMap = new Map<string, string[]>();
+
+        // After reading and parsing the initial JSON record, 
+        // some acronyms have multiple definitions 
+        // group them in a map
+
+        acronyms.forEach(acronym => {
+          const acronymKey = Object.keys(acronym)[0];
+          const newDefinition = Object.values(acronym)[0];
+          const definitions = acronymsMap.get(acronymKey);
+
+          if (definitions) {
+            definitions.push(newDefinition);
+            return;
+          }
+
+          acronymsMap.set(acronymKey, [newDefinition]);
+        });
+
+        //
+        let finalDatas:Acronym[];
+        acronymsMap.forEach((definitions, acronym)=>{
+          const newAcronym = new Acronym();
+          const newDefinition = new Definition()
+
+          newDefinition.acronym = newAcronym
+          newDefinition.definition = 
+          
+          newAcronym.acronym = acronym;
+          newAcronym.definitions = ;
+        })
 
         const finalData = acronyms.map(acronym => {
           const newAcronym = new Acronym();

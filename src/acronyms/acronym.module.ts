@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AcronymController } from './acronym.controller';
-import { Acronym, AcronymStatus } from './acronym.entity';
 import { AcronymService } from './acronym.service';
+import { Acronym, AcronymDBState } from './entity/acronym.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Acronym, AcronymStatus])],
+  imports: [TypeOrmModule.forFeature([Acronym, AcronymDBState])],
   controllers: [AcronymController],
   providers: [AcronymService],
 })
