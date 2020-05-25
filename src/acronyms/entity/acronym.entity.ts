@@ -21,7 +21,7 @@ export class Acronym {
     () => Definition,
     definition => definition.acronym,
     {
-      cascade: ['insert', 'update'],
+      onDelete: 'CASCADE',
     },
   )
   definitions: Definition[];

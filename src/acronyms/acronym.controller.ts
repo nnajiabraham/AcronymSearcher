@@ -84,20 +84,8 @@ export class AcronymController {
   }
 
   @Delete(':acronym')
-  async deleteAcronym(
-    @Param('acronym') acronym: string,
-    @Body() payload: UpdateAcronymDto,
-  ) {
-    if (!payload || !payload.definition) {
-      throw new BadRequestException('Missing definitionId or definition');
-    }
-
-    const update = new Acronym();
-    const newDefinition = new Definition();
-
-    newDefinition.definition = payload.definition;
-    update.acronym = acronym;
-    update.definitions = [newDefinition];
+  async deleteAcronym(@Param('acronym') acronym: string) {
+    return await this.acronymService.deleteAcronym(acronym);
 
     // const resp = await this.acronymService.updateAcronym(acronym, update);
     // return new HTTPResponseDto<Acronym>(200, "resp", null);

@@ -113,7 +113,13 @@ export class AcronymService {
     }
   }
 
-  async deleteAcronym() {}
+  async deleteAcronym(acronym: string) {
+    const acronymObj = await this.acronymRepository.findOne({
+      where: { acronym: Like(acronym) },
+    });
+
+    return await this.acronymRepository.remove(acronymObj);
+  }
 
   async bootStrapDBWithInitialData() {
     const status = await this.acronymDBStateRepository.findOne({

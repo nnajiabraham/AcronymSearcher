@@ -12,6 +12,9 @@ export class Definition {
   @ManyToOne(
     () => Acronym,
     acronym => acronym.acronymId,
+    {
+      onDelete: 'CASCADE',
+    },
   )
   acronym: Acronym;
 }
