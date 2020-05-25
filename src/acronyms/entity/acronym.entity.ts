@@ -20,9 +20,6 @@ export class Acronym {
   @OneToMany(
     () => Definition,
     definition => definition.acronym,
-    {
-      onDelete: 'CASCADE',
-    },
   )
   definitions: Definition[];
 }

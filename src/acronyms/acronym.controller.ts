@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   InternalServerErrorException,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -70,6 +71,7 @@ export class AcronymController {
     }
   }
 
+  //TODO add auth
   @Put(':acronym')
   async updateAcronym(
     @Param('acronym') acronym: string,
@@ -83,11 +85,16 @@ export class AcronymController {
     return new HTTPResponseDto<Definition>(200, resp, null);
   }
 
+  //TODO add auth
   @Delete(':acronym')
   async deleteAcronym(@Param('acronym') acronym: string) {
-    return await this.acronymService.deleteAcronym(acronym);
-
-    // const resp = await this.acronymService.updateAcronym(acronym, update);
-    // return new HTTPResponseDto<Acronym>(200, "resp", null);
+    try {
+      await this.acronymService.deleteAcronym(acronym);
+      //TODO better resp obj
+      return new HTTPResponseDto<any>(200, null, null);
+    } catch (e) {
+      console.error('Error occurred deleting Acronym ', e);
+      throw new NotFoundException('Acronym does not exist');
+    }
   }
 }
