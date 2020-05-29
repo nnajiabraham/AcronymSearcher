@@ -1,8 +1,12 @@
-## Description
+## Tools and frameworks used
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [NestJS](https://github.com/nestjs/nest)
+- [Typescript](https://www.typescriptlang.org/)
+- [Typeorm](https://typeorm.io/#/)
 
 ## Installation
+
+After cloning this project and cd to directory,
 
 ```bash
 $ npm install
