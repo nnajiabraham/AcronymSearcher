@@ -59,14 +59,23 @@ export class AcronymService {
     return result;
   }
 
-  async searchAcronym(acronym: string, offset: number = 0, limit: number = 10) {
+  async searchAcronym(acronym: string, offset: number = 0, limit: number) {
+    limit = limit && limit < 10 ? limit : 10;
+
     const result = await this.acronymRepository.findAndCount({
       where: { acronym: Like(`%${acronym}%`) },
       relations: ['definitions'],
-      take: limit > 10 ? 10 : limit,
+      take: limit,
       skip: offset,
     });
-    return result;
+
+    return {
+      pageLimit: limit,
+      totalNoPages: Math.ceil(result[1] / limit),
+      totalRecords: result[1],
+      currentPageAtOffSet: Math.ceil((offset + 1) / limit),
+      results: result[0],
+    };
   }
 
   async getRandomRecords(count: number) {

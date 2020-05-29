@@ -10,7 +10,10 @@ import {
   Post,
   Put,
   Query,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from 'src/Auth/auth.guard';
 import { AcronymService } from './acronym.service';
 import { CreateAcronymDto } from './dto/createAcronym.dto';
 import { HTTPResponseDto } from './dto/response.dto';
@@ -22,16 +25,26 @@ import { Definition } from './entity/definition.entity';
 export class AcronymController {
   constructor(private readonly acronymService: AcronymService) {}
 
-  //TODO add result count and add count to header
   @Get()
   async searchAcronyms(
     @Query('search') search: string,
-    @Query('from') from: number,
-    @Query('limit') limit: number,
+    @Query('from') from: string,
+    @Query('limit') limit: string,
+    @Res() res,
   ) {
     try {
-      const resp = await this.acronymService.searchAcronym(search, from, limit);
-      return new HTTPResponseDto<[Acronym[], number]>(200, resp, null);
+      const resp = await this.acronymService.searchAcronym(
+        search,
+        parseInt(from),
+        parseInt(limit),
+      );
+
+      res.set('X-Pagination-Count', resp.totalNoPages);
+      res.set('X-Pagination-Page', resp.currentPageAtOffSet);
+      res.set('X-Pagination-Limit', resp.pageLimit);
+      res.set('X-More-Records', resp.currentPageAtOffSet < resp.totalNoPages);
+      res.set('X-Total-Records', resp.totalRecords);
+      res.send(new HTTPResponseDto<Acronym[]>(200, resp.results, null));
     } catch (e) {
       console.error('Error occurred search for Acronym ', e);
       throw new InternalServerErrorException('Unable to search for acronym');
@@ -71,8 +84,8 @@ export class AcronymController {
     }
   }
 
-  //TODO add auth
   @Put(':acronym')
+  @UseGuards(AuthGuard)
   async updateAcronym(
     @Param('acronym') acronym: string,
     @Body() payload: UpdateAcronymDto,
@@ -85,13 +98,12 @@ export class AcronymController {
     return new HTTPResponseDto<Definition>(200, resp, null);
   }
 
-  //TODO add auth
   @Delete(':acronym')
+  @UseGuards(AuthGuard)
   async deleteAcronym(@Param('acronym') acronym: string) {
     try {
       await this.acronymService.deleteAcronym(acronym);
-      //TODO better resp obj
-      return new HTTPResponseDto<any>(200, null, null);
+      return new HTTPResponseDto<null>(200, null, null);
     } catch (e) {
       console.error('Error occurred deleting Acronym ', e);
       throw new NotFoundException('Acronym does not exist');
