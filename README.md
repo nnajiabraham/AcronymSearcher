@@ -36,17 +36,16 @@ $ npm run start:prod
     - X-Pagination-Limit - `The current page limit`
     - X-More-Records - `Boolean. If more records are avaible`
     - X-Total-Records - `Total number of result for the current search query`
-- GET /acronym/:acronym
+- `GET /acronym/:acronym`
   - returns the acronym and definitions matching `:acronym`
-- GET /random/:count?
+- `GET /random/:count?`
   - returns a number of `:count` random acronyms
-- POST /acronym
+- `POST /acronym`
   - receives an acronym and definition and creates the acronym if not exist or adds the definition if it exists.
   - Body `acronym: string; definition: string;`
-- PUT /acronym/:acronym
+- `PUT /acronym/:acronym`
   - uses an authorization header to ensure acronyms are protected. Dummy implementation but Authorization Header is required.
   - updates the acronym definition to the db for `:acronym`
-  - Body `definitionId: string; readonly definition: string;`. The `definitionId` is needed since an acronym can have multiple definitions
-- DELETE /acronym/:acronym
+  - Body `definitionId: string; readonly definition: string;`. The `definitionId` is needed since an acronym can have multiple definitions -`DELETE /acronym/:acronym`
   - deletes the acronym and all definitions for the `:acronym`
   - uses an authorization header to ensure acronyms are protected. Dummy implementation but Authorization Header is required.
